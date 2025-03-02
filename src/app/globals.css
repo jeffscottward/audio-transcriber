@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 3.7% 15.9%;
+  --muted: 240 3.7% 45.9%;
+  --border: 240 3.7% 19.9%;
+}
+
+body {
+  @apply bg-background text-foreground;
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground min-h-screen;
+  }
+}
+
+@layer components {
+  .dropzone {
+    @apply border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200 ease-in-out flex flex-col items-center justify-center;
+  }
+  
+  .dropzone-idle {
+    @apply border-muted text-muted hover:border-primary hover:text-primary;
+  }
+  
+  .dropzone-active {
+    @apply border-accent text-accent bg-accent/5;
+  }
+  
+  .dropzone-error {
+    @apply border-error text-error bg-error/5;
+  }
+  
+  .dropzone-success {
+    @apply border-success text-success bg-success/5;
+  }
+
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-background hover:bg-primary-hover;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-background hover:bg-secondary-hover;
+  }
+  
+  .btn-outline {
+    @apply border border-primary text-primary hover:bg-primary/10;
+  }
+  
+  .btn-ghost {
+    @apply text-muted hover:text-foreground hover:bg-card;
+  }
+}
