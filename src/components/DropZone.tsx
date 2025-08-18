@@ -17,7 +17,7 @@ export default function DropZone({
   isProcessing = false,
   isConverting = false,
   acceptedFileTypes = ['audio/*', 'video/*'],
-  maxSize = 25 * 1024 * 1024, // 25MB default
+  maxSize, // No default - allow undefined to disable size limits
 }: DropZoneProps) {
   const [error, setError] = useState<string | null>(null);
   
@@ -43,7 +43,7 @@ export default function DropZone({
       const rejection = fileRejections[0];
       if (rejection) {
         if (rejection.errors[0]?.code === 'file-too-large') {
-          setError(`File is too large. Max size is ${maxSize / 1024 / 1024}MB`);
+          setError(`File is too large. Max size is ${maxSize ? `${maxSize / 1024 / 1024}MB` : 'unlimited'}`);
         } else if (rejection.errors[0]?.code === 'file-invalid-type') {
           setError(`Invalid file type. Accepted types: ${acceptedFileTypes.join(', ')}`);
         } else {

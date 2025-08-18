@@ -8,15 +8,38 @@ export type TranscriptionResult = {
   error?: string;
 };
 
+export type TranscriptionMode = 'openai' | 'local' | 'auto';
+
+export interface LocalTranscriptionProgress {
+  status: 'loading' | 'processing' | 'complete' | 'error';
+  progress?: number;
+  text?: string;
+  error?: string;
+}
+
+export interface TranscriptionOptions {
+  mode?: TranscriptionMode;
+  onLocalProgress?: (progress: LocalTranscriptionProgress) => void;
+}
+
 /**
- * Transcribe an audio file using OpenAI's Whisper model
+ * Transcribe an audio file using OpenAI's Whisper model or local Whisper
  */
 export async function transcribeAudio(
   file: File,
-  apiKey?: string
+  apiKey?: string,
+  options?: TranscriptionOptions
 ): Promise<TranscriptionResult> {
-  if (!apiKey) {
-    return simulateTranscription(file);
+  const mode = options?.mode || (apiKey ? 'openai' : 'local');
+  
+  // If no API key and mode is auto/openai, fall back to local
+  if (mode === 'openai' && !apiKey) {
+    return transcribeAudioLocal(file, options);
+  }
+  
+  // If mode is local or no API key, use local transcription
+  if (mode === 'local' || !apiKey) {
+    return transcribeAudioLocal(file, options);
   }
 
   try {
@@ -29,10 +52,19 @@ export async function transcribeAudio(
     formData.append('file', file);
     formData.append('model', 'whisper-1');
 
-    const response = await openai.audio.transcriptions.create({
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Transcription request timed out after 60 seconds'));
+      }, 60000); // 60 second timeout
+    });
+
+    const transcriptionPromise = openai.audio.transcriptions.create({
       file: file,
       model: 'whisper-1',
     });
+
+    const response = await Promise.race([transcriptionPromise, timeoutPromise]);
 
     return {
       text: response.text,
@@ -42,6 +74,38 @@ export async function transcribeAudio(
     return {
       text: '',
       error: error instanceof Error ? error.message : 'Unknown transcription error',
+    };
+  }
+}
+
+/**
+ * Transcribe audio using local Whisper model
+ */
+async function transcribeAudioLocal(
+  file: File,
+  options?: TranscriptionOptions
+): Promise<TranscriptionResult> {
+  try {
+    // Dynamic import to avoid SSR issues
+    const { transcribeAudioLocally } = await import('./localTranscription');
+    const result = await transcribeAudioLocally(file, options?.onLocalProgress);
+    
+    if (result.error) {
+      return {
+        text: '',
+        error: result.error
+      };
+    }
+    
+    return {
+      text: result.text,
+      language: 'english' // whisper-tiny.en is English only
+    };
+  } catch (error) {
+    console.error('Local transcription error:', error);
+    return {
+      text: '',
+      error: error instanceof Error ? error.message : 'Unknown local transcription error'
     };
   }
 }
