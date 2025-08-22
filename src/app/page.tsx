@@ -252,8 +252,6 @@ export default function Home() {
         )}
       </div>
       
-      <TranscriptDisplay transcript={transcript} isLoading={isProcessing || isChunkedProcessing} />
-      
       {/* Download buttons for chunked results */}
       {chunkedResult && !isChunkedProcessing && transcript && (
         <div className="text-center space-y-4">
@@ -291,6 +289,8 @@ export default function Home() {
           </p>
         </div>
       )}
+      
+      <TranscriptDisplay transcript={transcript} isLoading={isProcessing || isChunkedProcessing} />
     </div>
   );
 }
