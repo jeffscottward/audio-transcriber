@@ -8,9 +8,12 @@
     "start": "next start",
     "lint": "next lint",
     "test": "playwright test",
+    "test:cli": "node tests/cli-unit.test.js",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
-    "test:console": "playwright test --reporter=line"
+    "test:console": "playwright test --reporter=line",
+    "transcribe": "node cli/youtube-transcriber.js",
+    "tiktok:urls": "node cli/tiktok-collect-urls.js"
   },
   "dependencies": {
     "autoprefixer": "^10.4.16",
