@@ -91,7 +91,7 @@ export default function ApiKeyInput({ onApiKeyChange }: ApiKeyInputProps) {
       </div>
       
       <p className="text-xs text-muted mt-2">
-        Don't have an API key? <a href="https://platform.openai.com/account/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get one from OpenAI</a>
+        Don&apos;t have an API key? <a href="https://platform.openai.com/account/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Get one from OpenAI</a>
       </p>
     </div>
   );

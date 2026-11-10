@@ -37,3 +37,7 @@ node_modules
 # transcription logs and temp files
 transcription.log
 temp_chunks/
+
+# Playwright
+/test-results/
+/playwright-report/

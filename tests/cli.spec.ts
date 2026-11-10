@@ -87,9 +87,16 @@ test.describe('YouTube Transcriber CLI', () => {
 
   test('should create proper directory structure', () => {
     const transcriber = new YouTubeTranscriber();
-    
-    expect(fs.existsSync(transcriber.downloadsDir)).toBe(true);
-    expect(fs.existsSync(transcriber.transcriptsDir)).toBe(true);
+    expect(fs.existsSync(transcriber.resultsDir)).toBe(true);
+
+    // Each video gets results/<title>/{downloads,transcripts}
+    const dirs = transcriber.createVideoDirectories('playwright-directory-structure-test');
+    try {
+      expect(fs.existsSync(dirs.downloadsDir)).toBe(true);
+      expect(fs.existsSync(dirs.transcriptsDir)).toBe(true);
+    } finally {
+      fs.rmSync(dirs.videoResultDir, { recursive: true, force: true });
+    }
   });
 
   test('should handle missing OpenAI API key gracefully', () => {
@@ -116,7 +123,7 @@ test.describe('YouTube Transcriber CLI', () => {
       expect(false).toBe(true); // Should not reach here
     } catch (error: any) {
       expect(error.status).toBe(1); // Exit code 1 for invalid usage
-      expect(error.stderr.toString()).toContain('Usage:');
+      expect(error.stdout.toString()).toContain('Usage:');
     }
   });
 
