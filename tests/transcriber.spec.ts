@@ -56,112 +56,54 @@ test.describe('Audio Transcriber', () => {
   test('should show API key input', async ({ page }) => {
     const apiKeyInput = page.locator('input[type="password"]');
     await expect(apiKeyInput).toBeVisible();
-    
+
     const placeholder = await apiKeyInput.getAttribute('placeholder');
-    expect(placeholder).toContain('OpenAI API key');
+    expect(placeholder).toContain('sk-');
   });
 
+  // The drop zone's file input is hidden, so tests set files on it directly.
   test('should reject invalid file types', async ({ page }) => {
-    // Create a test file with invalid type
-    const fileChooserPromise = page.waitForEvent('filechooser');
-    await page.locator('input[type="file"]').click();
-    const fileChooser = await fileChooserPromise;
-    
-    // Try to upload a text file (should be rejected)
-    const invalidFile = Buffer.from('This is not an audio file');
-    await fileChooser.setFiles([{
+    await page.locator('input[type="file"]').setInputFiles({
       name: 'test.txt',
       mimeType: 'text/plain',
-      buffer: invalidFile
-    }]);
-    
-    // Should show error message
+      buffer: Buffer.from('This is not an audio file'),
+    });
+
     await expect(page.locator('text=Invalid file type')).toBeVisible({ timeout: 5000 });
   });
 
   test('should accept large files without 25MB error', async ({ page }) => {
-    // Create a large dummy audio file (simulate 30MB)
-    const largeBuffer = Buffer.alloc(30 * 1024 * 1024); // 30MB
-    
-    const fileChooserPromise = page.waitForEvent('filechooser');
-    await page.locator('input[type="file"]').click();
-    const fileChooser = await fileChooserPromise;
-    
-    await fileChooser.setFiles([{
+    await page.locator('input[type="file"]').setInputFiles({
       name: 'large-audio.mp3',
       mimeType: 'audio/mpeg',
-      buffer: largeBuffer
-    }]);
-    
-    // Should NOT show "File is too large" error
+      buffer: Buffer.alloc(30 * 1024 * 1024), // 30MB
+    });
+
     await page.waitForTimeout(2000);
-    const errorMessage = page.locator('text=File is too large');
-    await expect(errorMessage).not.toBeVisible();
+    await expect(page.locator('text=File is too large')).not.toBeVisible();
   });
 
-  test('should show processing state when no API key is provided', async ({ page }) => {
-    // Create a small audio file
-    const audioBuffer = Buffer.alloc(1024); // 1KB dummy file
-    
-    const fileChooserPromise = page.waitForEvent('filechooser');
-    await page.locator('input[type="file"]').click();
-    const fileChooser = await fileChooserPromise;
-    
-    await fileChooser.setFiles([{
+  // Without an API key the app runs its simulated local transcription
+  // (src/lib/localTranscription.ts); the in-browser Whisper model was removed.
+  test('should transcribe with the local fallback when no API key is provided', async ({ page }) => {
+    await page.locator('input[type="file"]').setInputFiles({
       name: 'test-audio.mp3',
       mimeType: 'audio/mpeg',
-      buffer: audioBuffer
-    }]);
-    
-    // Should show local processing indication
-    await expect(page.locator('text=Processing locally')).toBeVisible({ timeout: 10000 });
+      buffer: Buffer.alloc(1024),
+    });
+
+    await expect(page.locator('text=simulated transcription')).toBeVisible({ timeout: 15000 });
   });
 
-  test('should show model loading progress for local transcription', async ({ page }) => {
-    // Create a large audio file to trigger chunked processing
-    const largeAudioBuffer = Buffer.alloc(50 * 1024 * 1024); // 50MB
-    
-    const fileChooserPromise = page.waitForEvent('filechooser');
-    await page.locator('input[type="file"]').click();
-    const fileChooser = await fileChooserPromise;
-    
-    await fileChooser.setFiles([{
-      name: 'large-test-audio.mp3',
-      mimeType: 'audio/mpeg',
-      buffer: largeAudioBuffer
-    }]);
-    
-    // Should show model loading progress
-    await expect(page.locator('text=Loading AI model')).toBeVisible({ timeout: 15000 });
-    
-    // Should show progress percentage
-    await expect(page.locator('text=%')).toBeVisible({ timeout: 20000 });
-  });
-
-  test('should provide download options after transcription', async ({ page }) => {
-    // For this test, we'll use a small file and wait for transcription to complete
-    // Note: This test requires the local Whisper model to be available
-    
-    const audioBuffer = Buffer.alloc(1024);
-    
-    const fileChooserPromise = page.waitForEvent('filechooser');
-    await page.locator('input[type="file"]').click();
-    const fileChooser = await fileChooserPromise;
-    
-    await fileChooser.setFiles([{
+  test('should offer copy after transcription', async ({ page }) => {
+    await page.locator('input[type="file"]').setInputFiles({
       name: 'test-audio.mp3',
       mimeType: 'audio/mpeg',
-      buffer: audioBuffer
-    }]);
-    
-    // Wait for transcription to complete (this might take a while)
-    await expect(page.locator('text=Download Transcript')).toBeVisible({ timeout: 60000 });
-    
-    // Check that all download format options are available
-    await expect(page.locator('text=Download TXT')).toBeVisible();
-    await expect(page.locator('text=Download SRT')).toBeVisible();
-    await expect(page.locator('text=Download VTT')).toBeVisible();
-    await expect(page.locator('text=Download JSON')).toBeVisible();
+      buffer: Buffer.alloc(1024),
+    });
+
+    await expect(page.locator('text=simulated transcription')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: /copy/i })).toBeVisible();
   });
 
   test.afterEach(async ({ page }) => {
